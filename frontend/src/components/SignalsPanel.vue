@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 
 interface Signal {
-  // id: string
+  id?: number | string  // ✅ Добавляем опциональный id
   // strategyId: string
   strategyName: string
   type: 'buy' | 'sell'

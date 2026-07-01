@@ -65,9 +65,11 @@ interface Strategy {
 }
 
 interface Signal {
+  id?: number | string  // Добавляем id (опционально)
   strategyName: string
   type: 'buy' | 'sell'
-  timestamp: Date | string
+  // timestamp: Date | string
+  timestamp: Date
   asset: string
   openingPrice: number
   stopLoss: number
@@ -277,7 +279,8 @@ const fetchSignals = async () => {
     
     signals.value = data.map((signal: any) => ({
       ...signal,
-      timestamp: new Date(signal.timestamp)
+      // timestamp: new Date(signal.timestamp)
+      timestamp: new Date(signal.timestamp)  // ✅ Гарантируем, что это Date
     }))
     
   } catch (err) {

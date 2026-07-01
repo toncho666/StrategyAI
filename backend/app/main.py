@@ -18,7 +18,10 @@ app = FastAPI(
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=[
+        "https://intellitrade-app-m68ky.ondigitalocean.app",  # Ваш URL
+        "http://localhost:5173",  # Для локальной разработки
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

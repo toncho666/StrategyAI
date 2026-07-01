@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const API_URL = import.meta.env.VITE_API_URL || '/api'
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StrategyForm from './components/StrategyForm.vue'
 import SignalsPanel from './components/SignalsPanel.vue'
@@ -92,7 +94,7 @@ const strategyInfoMap = ref<Record<string, { name: string; timeframe: string; as
 // Функция для загрузки информации о стратегиях
 const fetchStrategiesInfo = async () => {
   try {
-    const response = await fetch('/api/strategies/list')
+    const response = await fetch(`${API_URL}/strategies/list`)
     if (response.ok) {
       const data = await response.json()
       const infoMap: Record<string, { name: string; timeframe: string; asset: string; created: Date }> = {}
@@ -235,7 +237,7 @@ const fetchStrategiesStats = async () => {
   error.value = null
   
   try {
-    const response = await fetch('/api/strategies/stats')
+    const response = await fetch(`${API_URL}/strategies/stats`)
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -269,7 +271,7 @@ const fetchSignals = async () => {
   signalsError.value = null
   
   try {
-    const response = await fetch('/api/signals')
+    const response = await fetch(`${API_URL}/signals`)
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

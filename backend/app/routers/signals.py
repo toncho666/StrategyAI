@@ -5,7 +5,6 @@ from app.models import SignalResponse
 from app.database import execute_query
 from app.logger import logger
 
-# router = APIRouter(prefix="/signals", tags=["signals"])
 router = APIRouter(tags=["signals"])
 
 @router.get("/", response_model=List[SignalResponse])

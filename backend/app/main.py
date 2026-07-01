@@ -5,24 +5,22 @@ from app.config import settings
 from app.database import db_pool
 from app.routers import signals, strategies
 from app.logger import logger
+import os
 
 # Создание приложения
 app = FastAPI(
     title="Trading Strategies API",
     description="API для управления торговыми стратегиями и получения сигналов",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",  # ← Добавьте /api
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
+    # openapi_url="/api/openapi.json",  # ← Добавьте /api
 )
 
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://intellitrade-app-m68ky.ondigitalocean.app",  # Ваш URL
-        "http://localhost:5173",  # Для локальной разработки
-    ],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

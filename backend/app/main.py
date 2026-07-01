@@ -25,8 +25,8 @@ app.add_middleware(
 )
 
 # Подключение роутеров
-app.include_router(signals.router)
-app.include_router(strategies.router)
+app.include_router(signals.router, prefix="/signals")
+app.include_router(strategies.router, prefix="/strategies")
 
 
 @app.on_event("startup")

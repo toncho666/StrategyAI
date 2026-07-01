@@ -5,7 +5,7 @@ from app.models import StrategyInfo, StrategyStatsResponse
 from app.database import execute_query, get_db_cursor
 from app.logger import logger
 
-router = APIRouter(tags=["strategies"])
+router = APIRouter(prefix="/strategies", tags=["strategies"])
 
 
 @router.get("/list", response_model=List[StrategyInfo])

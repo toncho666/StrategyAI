@@ -20,7 +20,8 @@ app = FastAPI(
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
+    # allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
+    allow_origins=["*"],  # ← Временно для теста
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

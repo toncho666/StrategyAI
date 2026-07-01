@@ -28,8 +28,8 @@ app.add_middleware(
 )
 
 # Подключение роутеров
-app.include_router(signals.router)
-app.include_router(strategies.router)
+app.include_router(signals.router, prefix="/api")
+app.include_router(strategies.router, prefix="/api")
 
 
 @app.on_event("startup")

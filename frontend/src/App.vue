@@ -92,7 +92,7 @@ const strategyInfoMap = ref<Record<string, { name: string; timeframe: string; as
 // Функция для загрузки информации о стратегиях
 const fetchStrategiesInfo = async () => {
   try {
-    const response = await fetch('http://localhost:8020/strategies/list')
+    const response = await fetch('/api/strategies/list')
     if (response.ok) {
       const data = await response.json()
       const infoMap: Record<string, { name: string; timeframe: string; asset: string; created: Date }> = {}
@@ -235,7 +235,7 @@ const fetchStrategiesStats = async () => {
   error.value = null
   
   try {
-    const response = await fetch('http://localhost:8020/strategies/stats')
+    const response = await fetch('/api/strategies/stats')
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -269,7 +269,7 @@ const fetchSignals = async () => {
   signalsError.value = null
   
   try {
-    const response = await fetch('http://localhost:8020/signals')
+    const response = await fetch('/api/signals')
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

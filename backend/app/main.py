@@ -11,8 +11,9 @@ app = FastAPI(
     title="Trading Strategies API",
     description="API для управления торговыми стратегиями и получения сигналов",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",  # ← Добавьте /api
 )
 
 # Настройка CORS

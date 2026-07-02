@@ -89,7 +89,7 @@ const signalsLoading = ref(false)
 const signalsError = ref<string | null>(null)
 
 // Карта с информацией о стратегиях
-const strategyInfoMap = ref<Record<string, { name: string; timeframe: string; asset: string; created: Date }>>({})
+const strategyInfoMap = ref<Record<string, { name: string; timeframe: string; asset: string; description: string; created: Date }>>({})
 
 // Функция для загрузки информации о стратегиях
 const fetchStrategiesInfo = async () => {
@@ -97,12 +97,13 @@ const fetchStrategiesInfo = async () => {
     const response = await fetch(`${API_URL}/strategies/list`)
     if (response.ok) {
       const data = await response.json()
-      const infoMap: Record<string, { name: string; timeframe: string; asset: string; created: Date }> = {}
+      const infoMap: Record<string, { name: string; timeframe: string; asset: string; description: string; created: Date }> = {}
       data.forEach((s: any) => {
         infoMap[s.name] = {
           name: s.name,
           timeframe: s.timeframe || 'h1',
           asset: s.asset || 'BTCUSDT',
+          description: s.description,
           created: s.createdat ? new Date(s.createdat) : new Date()
         }
       })
@@ -174,7 +175,8 @@ const strategies = computed<Strategy[]>(() => {
       name: strategyName,
       timeframe: 'h1',
       asset: 'BTCUSDT',
-      created: new Date()
+      created: new Date(),
+      description: `${strategyName} strategy`
     }
     
     const last30Days = data.hist?.slice(-30) || []
@@ -183,13 +185,10 @@ const strategies = computed<Strategy[]>(() => {
     // Безопасно создаем дату
     const createdDate = safeCreateDate(info.created)
     
-    // Логируем для отладки
-    console.log(`Creating strategy: ${strategyName}, date:`, createdDate)
-    
     result.push({
       id: strategyName,
       name: info.name || strategyName,
-      description: `${info.name} strategy`,
+      description: info.description || `${info.name} strategy`,
       timeframe: (info.timeframe as 'h1' | 'h4' | 'd1') || 'h1',
       asset: info.asset || 'BTCUSDT',
       created: createdDate,  // Изменено с createdAt на created
@@ -244,12 +243,6 @@ const fetchStrategiesStats = async () => {
     }
     
     const data = await response.json()
-    
-    console.log('Response structure:', {
-      hasStrategies: !!data.strategies,
-      strategiesKeys: data.strategies ? Object.keys(data.strategies) : [],
-      firstStrategy: data.strategies ? data.strategies[Object.keys(data.strategies)[0]] : null
-    })
     
     strategiesData.value = data
     

@@ -14,6 +14,19 @@ interface Strategy {
   dailyAvgProfit: number[]
   dailyAvgLoss: number[]
   profitToDate: number[]
+  profitOnDate: number[]
+  profitabilityToDate: number[]
+  profitabilityOnDate: number[]
+  annual252Profitability: number[]
+  annual365Profitability: number[]
+  tradesToDate: number[]
+  tradesOnDate: number[]
+  maxDrawdownToDate: number[]
+  maxDrawdownOnDate: number[]
+  avgProfitableTradeToDate: number[]
+  avgProfitableTradeOnDate: number[]
+  avgLosingTradeToDate: number[]
+  avgLosingTradeOnDate: number[]
   totalProfitToday: number
   tradeCount: number
   winRate: number
@@ -64,7 +77,18 @@ const emit = defineEmits<{
 }>()
 
 const selectedStrategyId = ref(props.strategy.id)
-const selectedMetric = ref<'profit' | 'profitability' | 'annual252' | 'annual365' | 'trades' | 'winRate' | 'avgProfit' | 'avgLoss' | 'maxDrawdown'>('profitability')
+
+type MetricType = 
+  | 'profit' | 'profitOnDate'
+  | 'profitability' | 'profitabilityOnDate'
+  | 'annual252' | 'annual365'
+  | 'trades' | 'tradesOnDate'
+  | 'winRate'
+  | 'avgProfit' | 'avgProfitOnDate'
+  | 'avgLoss' | 'avgLossOnDate'
+  | 'maxDrawdown' | 'maxDrawdownOnDate'
+
+const selectedMetric = ref<MetricType>('profitability')
 
 const handleStrategyChange = (newId: string) => {
   selectedStrategyId.value = newId
@@ -123,6 +147,24 @@ const chartData = computed(() => {
       case 'maxDrawdown':
         value = metric.max_drawdown_to_date || 0
         break
+      case 'profitOnDate':
+        value = metric.profit_on_date || 0
+        break
+      case 'profitabilityOnDate':
+        value = metric.profitability_on_date || 0
+        break
+      case 'tradesOnDate':
+        value = metric.trades_on_date || 0
+        break
+      case 'avgProfitOnDate':
+        value = metric.avg_profitable_trade_on_date || 0
+        break
+      case 'avgLossOnDate':
+        value = metric.avg_losing_trade_on_date || 0
+        break
+      case 'maxDrawdownOnDate':
+        value = metric.max_drawdown_on_date || 0
+        break
     }
     return {
       dt: metric.dt || '',
@@ -150,25 +192,32 @@ const lastOnDateValue = computed(() => {
   if (!lastData.value) return 0
   switch (selectedMetric.value) {
     case 'profit':
+    case 'profitOnDate':
       return lastData.value.profit_on_date || 0
     case 'profitability':
+    case 'profitabilityOnDate':
       return lastData.value.profitability_on_date || 0
     case 'trades':
+    case 'tradesOnDate':
       return lastData.value.trades_on_date || 0
     case 'winRate':
       return lastData.value.dynamic_win_rate || 0
     case 'avgProfit':
+    case 'avgProfitOnDate':
       return lastData.value.avg_profitable_trade_on_date || 0
     case 'avgLoss':
+    case 'avgLossOnDate':
       return lastData.value.avg_losing_trade_on_date || 0
     case 'maxDrawdown':
+    case 'maxDrawdownOnDate':
       return lastData.value.max_drawdown_on_date || 0
     default:
       return 0
   }
 })
 
-// Вычисляем максимальное и минимальное значение с отступами
+// ✅ НОВАЯ ЛОГИКА: Вычисляем максимальное и минимальное значение с отступами
+// Для правильного отображения отрицательных значений
 const maxValue = computed(() => {
   if (chartData.value.length === 0) return 100
   
@@ -176,63 +225,94 @@ const maxValue = computed(() => {
   const max = Math.max(...values)
   const min = Math.min(...values)
   
-  // Если все значения равны 0, возвращаем 100 для нормального отображения
+  // Если все значения равны 0, возвращаем базовые значения
   if (max === 0 && min === 0) return 100
   
-  // Добавляем 20% отступа сверху для лучшей визуализации
-  const padding = Math.abs(max) * 0.2
-  return max + padding
+  // Находим максимальное абсолютное значение для симметричного отображения
+  const maxAbs = Math.max(Math.abs(max), Math.abs(min))
+  
+  // Добавляем 20% отступа сверху и снизу
+  const padding = maxAbs * 0.2
+  
+  return maxAbs + padding
 })
 
+// ✅ Новая логика: минимальное значение для отображения (отрицательное)
 const minValue = computed(() => {
   if (chartData.value.length === 0) return 0
   
   const values = chartData.value.map(d => d.value)
-  const min = Math.min(...values)
   const max = Math.max(...values)
+  const min = Math.min(...values)
   
-  // Если все значения равны 0, возвращаем 0
-  if (min === 0 && max === 0) return 0
+  if (max === 0 && min === 0) return -10
   
-  // Добавляем 20% отступа снизу для отрицательных значений
-  const padding = Math.abs(min) * 0.2
-  return min - padding
+  const maxAbs = Math.max(Math.abs(max), Math.abs(min))
+  const padding = maxAbs * 0.2
+  
+  return -(maxAbs + padding)
 })
 
-const range = computed(() => {
-  const r = maxValue.value - minValue.value
-  return r === 0 ? 1 : r
+// ✅ Новая логика: позиция нулевой линии (в процентах от высоты)
+const zeroLinePosition = computed(() => {
+  if (maxValue.value === 0 && minValue.value === 0) return 50
+  return (Math.abs(minValue.value) / (maxValue.value + Math.abs(minValue.value))) * 100
 })
 
-// Функция для расчета высоты столбца
+// ✅ НОВАЯ ФУНКЦИЯ: расчет высоты столбца относительно нуля
 const getChartHeight = (value: number) => {
   if (chartData.value.length === 0) return 0
   
   // Если все значения равны 0, возвращаем минимальную высоту
   if (maxValue.value === 0 && minValue.value === 0) {
-    return 1
-  }
-  
-  const height = ((value - minValue.value) / range.value) * 100
-  
-  // Если значение очень маленькое, но не нулевое, показываем минимальную высоту
-  if (value !== 0 && height < 1) {
     return 2
   }
   
-  return Math.max(height, 0.5)
+  // Расчитываем высоту от нулевой линии
+  // Положительные значения - вверх от нуля, отрицательные - вниз
+  const totalRange = maxValue.value + Math.abs(minValue.value)
+  if (totalRange === 0) return 2
+  
+  // Если значение положительное - высота от нуля вверх
+  // Если отрицательное - высота от нуля вниз
+  const heightPercent = (Math.abs(value) / totalRange) * 100
+  
+  // Минимальная видимая высота для ненулевых значений
+  if (value !== 0 && heightPercent < 1) {
+    return 2
+  }
+  
+  return Math.max(heightPercent, 0.5)
 }
 
-// Функция для получения меток оси Y (сверху вниз: от максимума к минимуму)
+// ✅ НОВАЯ ФУНКЦИЯ: расчет отступа сверху для правильного позиционирования
+const getTopOffset = (value: number) => {
+  if (chartData.value.length === 0) return 0
+  
+  const totalRange = maxValue.value + Math.abs(minValue.value)
+  if (totalRange === 0) return 0
+  
+  // Если значение положительное - позиция от нуля вверх
+  if (value >= 0) {
+    const heightPercent = (value / totalRange) * 100
+    return zeroLinePosition.value - heightPercent
+  }
+  
+  // Если значение отрицательное - позиция от нуля вниз
+  const heightPercent = (Math.abs(value) / totalRange) * 100
+  return zeroLinePosition.value
+}
+
+// ✅ НОВАЯ ФУНКЦИЯ: получение меток оси Y
 const getYAxisLabels = () => {
   if (chartData.value.length === 0) return []
   
   const labels = []
-  const numLabels = 5
+  const numLabels = 7
   
   for (let i = 0; i <= numLabels; i++) {
     const ratio = 1 - (i / numLabels)
-    const value = minValue.value + (range.value * ratio)
+    const value = minValue.value + (maxValue.value - minValue.value) * ratio
     labels.push({
       value: value,
       label: value.toFixed(2)
@@ -283,7 +363,6 @@ const getDayLabel = (index: number) => {
   return ''
 }
 
-// Полная подпись для оси X
 const getFullDayLabel = (index: number) => {
   const data = chartData.value
   if (!data || data.length === 0 || index >= data.length) return ''
@@ -301,22 +380,34 @@ const chartLabel = computed(() => {
   switch (selectedMetric.value) {
     case 'profit':
       return 'Cumulative Profit'
+    case 'profitOnDate':
+      return 'Daily Profit'
     case 'profitability':
       return 'Cumulative Profitability'
+    case 'profitabilityOnDate':
+      return 'Daily Profitability'
     case 'annual252':
       return 'Annual Profitability (252 days)'
     case 'annual365':
       return 'Annual Profitability (365 days)'
     case 'trades':
       return 'Cumulative Trades'
+    case 'tradesOnDate':
+      return 'Daily Trades'
     case 'winRate':
       return 'Win Rate Dynamics'
     case 'avgProfit':
-      return 'Average Profitable Trade'
+      return 'Avg Profitable Trade (Cumulative)'
+    case 'avgProfitOnDate':
+      return 'Avg Profitable Trade (Daily)'
     case 'avgLoss':
-      return 'Average Losing Trade'
+      return 'Avg Losing Trade (Cumulative)'
+    case 'avgLossOnDate':
+      return 'Avg Losing Trade (Daily)'
     case 'maxDrawdown':
-      return 'Maximum Drawdown'
+      return 'Maximum Drawdown (Cumulative)'
+    case 'maxDrawdownOnDate':
+      return 'Maximum Drawdown (Daily)'
     default:
       return 'Metric Dynamics'
   }
@@ -325,22 +416,27 @@ const chartLabel = computed(() => {
 const getMetricUnit = () => {
   switch (selectedMetric.value) {
     case 'profit':
+    case 'profitOnDate':
       return '$'
     case 'profitability':
+    case 'profitabilityOnDate':
       return '%'
     case 'annual252':
-      return '%'
     case 'annual365':
       return '%'
     case 'trades':
+    case 'tradesOnDate':
       return ''
     case 'winRate':
       return '%'
     case 'avgProfit':
+    case 'avgProfitOnDate':
       return '$'
     case 'avgLoss':
+    case 'avgLossOnDate':
       return '$'
     case 'maxDrawdown':
+    case 'maxDrawdownOnDate':
       return '%'
     default:
       return ''
@@ -348,11 +444,11 @@ const getMetricUnit = () => {
 }
 
 const getColor = (value: number) => {
-  if (selectedMetric.value === 'trades') return '#007AFF'
+  if (selectedMetric.value === 'trades' || selectedMetric.value === 'tradesOnDate') return '#007AFF'
   if (selectedMetric.value === 'winRate') return '#34C759'
-  if (selectedMetric.value === 'maxDrawdown') return '#FF3B30'
-  if (selectedMetric.value === 'avgProfit') return '#34C759'
-  if (selectedMetric.value === 'avgLoss') return '#FF3B30'
+  if (selectedMetric.value === 'maxDrawdown' || selectedMetric.value === 'maxDrawdownOnDate') return '#FF3B30'
+  if (selectedMetric.value === 'avgProfit' || selectedMetric.value === 'avgProfitOnDate') return '#34C759'
+  if (selectedMetric.value === 'avgLoss' || selectedMetric.value === 'avgLossOnDate') return '#FF3B30'
   return value >= 0 ? '#34c759' : '#ff3b30'
 }
 
@@ -403,15 +499,25 @@ watch(() => props.strategy.id, () => {
             v-model="selectedMetric"
             class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="profit">Cumulative Profit</option>
-            <option value="profitability">Cumulative Profitability</option>
-            <option value="annual252">Annual Profitability (252)</option>
-            <option value="annual365">Annual Profitability (365)</option>
-            <option value="trades">Cumulative Trades</option>
-            <option value="winRate">Win Rate Dynamics</option>
-            <option value="avgProfit">Avg Profitable Trade</option>
-            <option value="avgLoss">Avg Losing Trade</option>
-            <option value="maxDrawdown">Max Drawdown</option>
+            <optgroup label="Cumulative (To Date)">
+              <option value="profit">Cumulative Profit</option>
+              <option value="profitability">Cumulative Profitability</option>
+              <option value="annual252">Annual Profitability (252)</option>
+              <option value="annual365">Annual Profitability (365)</option>
+              <option value="trades">Cumulative Trades</option>
+              <option value="winRate">Win Rate Dynamics</option>
+              <option value="avgProfit">Avg Profitable Trade</option>
+              <option value="avgLoss">Avg Losing Trade</option>
+              <option value="maxDrawdown">Max Drawdown</option>
+            </optgroup>
+            <optgroup label="Daily (On Date)">
+              <option value="profitOnDate">Daily Profit</option>
+              <option value="profitabilityOnDate">Daily Profitability</option>
+              <option value="tradesOnDate">Daily Trades</option>
+              <option value="avgProfitOnDate">Avg Profitable Trade (Daily)</option>
+              <option value="avgLossOnDate">Avg Losing Trade (Daily)</option>
+              <option value="maxDrawdownOnDate">Max Drawdown (Daily)</option>
+            </optgroup>
           </select>
         </div>
 
@@ -445,15 +551,21 @@ watch(() => props.strategy.id, () => {
       <div class="mb-8 grid grid-cols-6 gap-4">
         <div class="rounded-lg bg-gray-50 p-4">
           <div class="text-xs text-gray-500 mb-1">Current (To Date)</div>
-          <div :class="['text-2xl font-semibold', selectedMetric === 'trades' || selectedMetric === 'winRate' ? 'text-black' : (lastValue >= 0 ? 'text-profit' : 'text-loss')]">
-            {{ lastValue >= 0 && selectedMetric !== 'trades' ? '+' : '' }}{{ lastValue.toFixed(2) }}{{ getMetricUnit() }}
+          <div :class="['text-2xl font-semibold', 
+            selectedMetric === 'trades' || selectedMetric === 'tradesOnDate' || selectedMetric === 'winRate' ? 'text-black' : 
+            (lastValue >= 0 ? 'text-profit' : 'text-loss')]">
+            {{ lastValue >= 0 && selectedMetric !== 'trades' && selectedMetric !== 'tradesOnDate' && selectedMetric !== 'winRate' ? '+' : '' }}
+            {{ lastValue.toFixed(2) }}{{ getMetricUnit() }}
           </div>
         </div>
 
         <div class="rounded-lg bg-gray-50 p-4">
           <div class="text-xs text-gray-500 mb-1">On Date</div>
-          <div :class="['text-2xl font-semibold', selectedMetric === 'trades' || selectedMetric === 'winRate' ? 'text-black' : (lastOnDateValue >= 0 ? 'text-profit' : 'text-loss')]">
-            {{ lastOnDateValue >= 0 && selectedMetric !== 'trades' ? '+' : '' }}{{ lastOnDateValue.toFixed(2) }}{{ getMetricUnit() }}
+          <div :class="['text-2xl font-semibold', 
+            selectedMetric === 'trades' || selectedMetric === 'tradesOnDate' || selectedMetric === 'winRate' ? 'text-black' : 
+            (lastOnDateValue >= 0 ? 'text-profit' : 'text-loss')]">
+            {{ lastOnDateValue >= 0 && selectedMetric !== 'trades' && selectedMetric !== 'tradesOnDate' && selectedMetric !== 'winRate' ? '+' : '' }}
+            {{ lastOnDateValue.toFixed(2) }}{{ getMetricUnit() }}
           </div>
         </div>
 
@@ -499,28 +611,35 @@ watch(() => props.strategy.id, () => {
                 v-for="label in getYAxisLabels()" 
                 :key="label.value" 
                 class="text-xs text-gray-500 text-right leading-none"
-                style="height: 20%; display: flex; align-items: center; justify-content: flex-end;"
+                style="height: calc(100% / 8); display: flex; align-items: center; justify-content: flex-end;"
               >
                 {{ label.label }}{{ getMetricUnit() }}
               </div>
             </div>
             
             <!-- Chart Area -->
-            <div class="flex-1">
-              <div class="flex items-end justify-between gap-0.5 h-80">
+            <div class="flex-1 relative h-80">
+              <!-- ✅ НУЛЕВАЯ ЛИНИЯ -->
+              <div 
+                class="absolute left-0 right-0 border-t border-gray-400 border-dashed"
+                :style="{
+                  top: `${zeroLinePosition}%`,
+                }"
+              />
+              
+              <!-- Столбцы -->
+              <div class="flex items-end justify-between gap-0.5 h-full relative">
                 <div
                   v-for="(item, index) in chartData"
                   :key="index"
-                  class="flex flex-1 flex-col items-center gap-1 relative group"
-                  :style="{
-                    height: '100%',
-                  }"
+                  class="flex flex-1 flex-col items-center gap-1 relative group h-full"
                 >
-                  <div class="flex items-end justify-center w-full h-full relative">
+                  <div class="flex items-center justify-center w-full h-full relative">
                     <div
-                      class="w-full rounded-t transition-all duration-200 hover:opacity-80 cursor-pointer"
+                      class="w-full rounded-t transition-all duration-200 hover:opacity-80 cursor-pointer absolute"
                       :style="{
                         height: `${getChartHeight(item.value)}%`,
+                        top: `${getTopOffset(item.value)}%`,
                         backgroundColor: getColor(item.value),
                         minHeight: item.value !== 0 ? '3px' : '0px',
                       }"
@@ -553,7 +672,7 @@ watch(() => props.strategy.id, () => {
               Min: {{ minValue.toFixed(4) }}{{ getMetricUnit() }}
             </div>
             <div class="text-xs text-gray-500">
-              Avg: {{ (chartData.reduce((a, b) => a + b.value, 0) / chartData.length).toFixed(4) }}{{ getMetricUnit() }}
+              Zero
             </div>
             <div class="text-xs text-gray-500">
               Max: {{ maxValue.toFixed(4) }}{{ getMetricUnit() }}

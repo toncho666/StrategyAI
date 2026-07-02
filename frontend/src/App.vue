@@ -48,13 +48,29 @@ interface Strategy {
   description: string
   timeframe: 'h1' | 'h4' | 'd1'
   asset: string
-  created: Date  // Изменено с createdAt на created
+  created: Date
+  // Ежемесячные данные
   monthlyProfitability: number[]
+  // Дневные данные (массивы для графиков)
   dailyProfitability: number[]
   dailyWinRate: number[]
   dailyAvgProfit: number[]
   dailyAvgLoss: number[]
-  profitToDate: number[]  // Добавлено поле
+  profitToDate: number[]
+  profitOnDate: number[]
+  profitabilityToDate: number[]
+  profitabilityOnDate: number[]
+  annual252Profitability: number[]
+  annual365Profitability: number[]
+  tradesToDate: number[]
+  tradesOnDate: number[]
+  maxDrawdownToDate: number[]
+  maxDrawdownOnDate: number[]
+  avgProfitableTradeToDate: number[]
+  avgProfitableTradeOnDate: number[]
+  avgLosingTradeToDate: number[]
+  avgLosingTradeOnDate: number[]
+  // Текущие значения (последний день)
   totalProfitToday: number
   tradeCount: number
   winRate: number
@@ -65,6 +81,7 @@ interface Strategy {
   profitabilityDynamic: number
   annualProfitability: number
 }
+
 
 interface Signal {
   id?: number | string  // Добавляем id (опционально)
@@ -171,7 +188,6 @@ const strategies = computed<Strategy[]>(() => {
       continue
     }
     const info = strategyInfoMap.value[strategyName] || {
-      
       name: strategyName,
       timeframe: 'h1',
       asset: 'BTCUSDT',
@@ -181,8 +197,6 @@ const strategies = computed<Strategy[]>(() => {
     
     const last30Days = data.hist?.slice(-30) || []
     const monthlyData = aggregateByMonth(data.hist || [])
-    
-    // Безопасно создаем дату
     const createdDate = safeCreateDate(info.created)
     
     result.push({
@@ -191,13 +205,29 @@ const strategies = computed<Strategy[]>(() => {
       description: info.description || `${info.name} strategy`,
       timeframe: (info.timeframe as 'h1' | 'h4' | 'd1') || 'h1',
       asset: info.asset || 'BTCUSDT',
-      created: createdDate,  // Изменено с createdAt на created
+      created: createdDate,
+      // Ежемесячные
       monthlyProfitability: monthlyData,
+      // Дневные массивы - все показатели
       dailyProfitability: last30Days.map(d => d?.profitability_on_date || 0),
       dailyWinRate: last30Days.map(d => d?.dynamic_win_rate || 0),
       dailyAvgProfit: last30Days.map(d => d?.avg_profitable_trade_on_date || 0),
       dailyAvgLoss: last30Days.map(d => Math.abs(d?.avg_losing_trade_on_date || 0)),
-      profitToDate: last30Days.map(d => d?.profit_to_date || 0),  // Добавлено поле
+      profitToDate: last30Days.map(d => d?.profit_to_date || 0),
+      profitOnDate: last30Days.map(d => d?.profit_on_date || 0),
+      profitabilityToDate: last30Days.map(d => d?.profitability_to_date || 0),
+      profitabilityOnDate: last30Days.map(d => d?.profitability_on_date || 0),
+      annual252Profitability: last30Days.map(d => d?.annual_252_profitability_to_date || 0),
+      annual365Profitability: last30Days.map(d => d?.annual_365_profitability_to_date || 0),
+      tradesToDate: last30Days.map(d => d?.trades_to_date || 0),
+      tradesOnDate: last30Days.map(d => d?.trades_on_date || 0),
+      maxDrawdownToDate: last30Days.map(d => d?.max_drawdown_to_date || 0),
+      maxDrawdownOnDate: last30Days.map(d => d?.max_drawdown_on_date || 0),
+      avgProfitableTradeToDate: last30Days.map(d => d?.avg_profitable_trade_to_date || 0),
+      avgProfitableTradeOnDate: last30Days.map(d => d?.avg_profitable_trade_on_date || 0),
+      avgLosingTradeToDate: last30Days.map(d => Math.abs(d?.avg_losing_trade_to_date || 0)),
+      avgLosingTradeOnDate: last30Days.map(d => Math.abs(d?.avg_losing_trade_on_date || 0)),
+      // Текущие значения
       totalProfitToday: data.last?.profit_to_date || 0,
       tradeCount: data.last?.trades_to_date || 0,
       winRate: data.last?.dynamic_win_rate || 0,

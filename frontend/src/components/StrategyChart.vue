@@ -666,18 +666,6 @@ watch(() => props.strategy.id, () => {
             </div>
           </div>
 
-          <!-- Y-axis Labels Bottom -->
-          <div class="mt-6 flex items-end justify-between" style="padding-left: 70px;">
-            <div class="text-xs text-gray-500">
-              Min: {{ minValue.toFixed(4) }}{{ getMetricUnit() }}
-            </div>
-            <div class="text-xs text-gray-500">
-              Zero
-            </div>
-            <div class="text-xs text-gray-500">
-              Max: {{ maxValue.toFixed(4) }}{{ getMetricUnit() }}
-            </div>
-          </div>
         </template>
       </div>
 

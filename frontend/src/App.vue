@@ -271,7 +271,7 @@ const fetchSignals = async () => {
   signalsError.value = null
   
   try {
-    const response = await fetch(`${API_URL}/signals`)
+    const response = await fetch(`${API_URL}/signals/`)
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

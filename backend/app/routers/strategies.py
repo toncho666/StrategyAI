@@ -20,6 +20,7 @@ async def get_strategies_list():
             name,
             timeframe,
             asset,
+            description,
             createdat::date AS createdat
         FROM test.strategy_info
         WHERE expirationdate > NOW()

@@ -26,6 +26,7 @@ class StrategyInfo(BaseModel):
     timeframe: str = Field(..., description="Таймфрейм")
     asset: str = Field(..., description="Актив")
     createdAt: date = Field(..., alias="createdat", description="Дата создания")  # Добавлен alias
+    description: Optional[str] = None
     
     class Config:
         populate_by_name = True  # Разрешить заполнение по имени или по alias
